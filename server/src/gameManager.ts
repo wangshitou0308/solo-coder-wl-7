@@ -80,7 +80,7 @@ export class GameManager {
   startGame(roomId: string): GameState | null {
     const room = this.rooms.get(roomId);
     if (!room) return null;
-    if (room.players.length < 2) return null;
+    if (room.players.length < 4) return null;
 
     room.isPlaying = true;
     const gameState = this.initializeGameState(room);
@@ -156,10 +156,20 @@ export class GameManager {
     const player = room.gameState.players.find(p => p.id === playerId);
     if (!player) return false;
 
+    const highestBidder = room.gameState.players
+      .filter(p => !p.hasPassed)
+      .sort((a, b) => b.bidAmount - a.bidAmount)[0];
+    
+    if (highestBidder && highestBidder.id === playerId && room.gameState.bids.length > 0) {
+      return false;
+    }
+
     player.hasPassed = true;
 
     const activePlayers = room.gameState.players.filter(p => !p.hasPassed);
-    if (activePlayers.length <= 1) {
+    const activeBidders = activePlayers.filter(p => p.bidAmount > 0);
+    
+    if (activePlayers.length <= 1 || (activeBidders.length === 1 && activePlayers.every(p => p.hasPassed || p.bidAmount > 0))) {
       this.endAuction(room);
     }
 

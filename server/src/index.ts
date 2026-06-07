@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
 
     const gameState = gameManager.startGame(room.id);
     if (!gameState) {
-      socket.emit('error', '开始游戏失败，至少需要2名玩家');
+      socket.emit('error', '开始游戏失败，至少需要4名玩家');
       return;
     }
 
@@ -153,10 +153,19 @@ io.on('connection', (socket) => {
     const room = gameManager.getRoomByPlayerId(playerId);
     if (!room || !room.gameState) return;
 
+    const player = room.gameState.players.find(p => p.id === playerId);
+    
+    if (player && amount > player.money) {
+      socket.emit('error', '出价金额不能超过你的资产！');
+      return;
+    }
+
     const bid = gameManager.placeBid(room.id, playerId, amount);
     if (bid) {
       io.to(room.id).emit('bidPlaced', bid);
       io.to(room.id).emit('gameStateUpdated', room.gameState);
+    } else {
+      socket.emit('error', '出价失败，请检查金额是否符合要求');
     }
   });
 
@@ -188,6 +197,8 @@ io.on('connection', (socket) => {
       }
       
       io.to(room.id).emit('gameStateUpdated', room.gameState);
+    } else {
+      socket.emit('error', '作为当前最高出价者，你不能跳过！');
     }
   });
 

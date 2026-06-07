@@ -62,6 +62,22 @@ export default function GameRoom({
   const handlePlaceBid = () => {
     const amount = parseInt(bidAmount);
     if (isNaN(amount)) return;
+    
+    if (!gameState) return;
+    
+    const minNextBid = gameState.currentBid + gameState.minBidIncrement;
+    const playerMoney = currentPlayer?.money || 0;
+    
+    if (amount > playerMoney) {
+      alert(`出价金额不能超过你的资产（¥${playerMoney.toLocaleString()}）`);
+      return;
+    }
+    
+    if (amount < minNextBid) {
+      alert(`最低出价金额为 ¥${minNextBid.toLocaleString()}`);
+      return;
+    }
+    
     onPlaceBid(amount);
     setBidAmount('');
   };
@@ -93,9 +109,9 @@ export default function GameRoom({
           <button
             className="btn btn-primary"
             onClick={onStartGame}
-            disabled={room.players.length < 2}
+            disabled={room.players.length < 4}
           >
-            开始游戏 ({room.players.length}/6)
+            开始游戏 ({room.players.length}/6) {room.players.length < 4 && `(还需${4 - room.players.length}人)`}
           </button>
         )}
         <button className="btn btn-secondary" onClick={onLeaveRoom}>
